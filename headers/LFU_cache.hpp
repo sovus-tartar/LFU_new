@@ -6,101 +6,46 @@
 #include <iterator>
 #include <vector>
 
-namespace caches
+namespace lfu
 {
-
     template <typename T>
     struct node_t
     {
         T data;
         int hit_count;
         int key;
-    };
 
-    template <typename T>
-    bool cmp_(const node_t<T> &a, const node_t<T> &b)
-    {
-        return a.hit_count <= b.hit_count;
-    }
+        node_t(T data_, int hit_, int key_) : data(data_), hit_count(hit_), key(key_){};
+        ~node_t(){};
+    };
 
     template <typename T, typename key_t, typename F>
     struct cache_t
     {
-        using ListIt = typename std::list<node_t<T>>::iterator;
+        using ListIt = typename std::list<node_t<T> *>::iterator;
 
+    private:
         size_t sz_;
-        std::list<node_t<T>> cache_;
+        std::list<node_t<T> *> cache_;
         std::unordered_map<key_t, ListIt> hashmap_;
 
-        cache_t(size_t sz) : sz_(sz){};
-
-        
-        ListIt put_node(ListIt node)
-        {
-            int hit = node->hit_count;
-
-            for (auto it = cache_.begin();; it++)
+        void move_node(ListIt node_it)
+        {   
+            int hit_curr = (*node_it)->hit_count;
+            ListIt it = node_it;
+            it++;
+            for(node_it; it != cache_.end(); ++it)
             {
-                int curr_hit = it->hit_count;
 
-                if ((hit < curr_hit) || (it == cache_.end()))
+                if ((*it)->hit_count > hit_curr)
                 {
-                    auto new_it = cache_.insert(it, *node);
-
-                    hashmap_[node->key] = new_it;
-                    cache_.erase(node);
-
-                    return new_it;
+                    cache_.splice(it, cache_, node_it);
+                    //std::cout << "put: " << (*node_it)->key << " before: " << (*it)->key << std::endl;
+                    return;
                 }
             }
-        }
-        
-        ListIt put_node(node_t<T> node)
-        {
-            int hit = node.hit_count;
 
-            for (auto it = cache_.begin();; it++)
-            {
-                int curr_hit = it->hit_count;
-
-                if ((hit < curr_hit) || (it == cache_.end()))
-                {
-                    auto new_it = cache_.insert(it, node);
-
-                    hashmap_[node.key] = new_it;
-
-                    return new_it;
-                }
-            }
-        }
-
-        bool cache_request(int key, F slow_get_page)
-        {
-            auto node = hashmap_.find(key);
-
-            if (node != hashmap_.end())
-            {
-                node->second->hit_count++;
-                // hashmap_.erase(node->second->key);
-                put_node(node->second);
-                return true;
-            }
-
-            if (is_full())
-            {
-                int key_to_delete = cache_.front().key;
-                cache_.pop_front();
-                hashmap_.erase(key_to_delete);
-            }
-
-            struct node_t<T> temp;
-            temp.data = slow_get_page(key);
-            temp.hit_count = 0;
-            temp.key = key;
-
-            put_node(temp);
-
-            return false;
+            cache_.splice(cache_.end(), cache_, node_it);
         }
 
         bool is_full() const
@@ -108,12 +53,63 @@ namespace caches
             return (cache_.size() == sz_);
         }
 
+    public:
+
+        cache_t(size_t sz) : sz_(sz){};
+
+        bool cache_request(int &key, F &slow_get_page)
+        {
+            auto search = hashmap_.find(key);
+
+            if (search != hashmap_.end()) // found
+            {
+                ListIt node_it = search->second;
+
+                (*node_it)->hit_count += 1;
+                move_node(node_it);
+                return true;
+                
+            }
+            else // not found
+            {
+                if (is_full())
+                {
+                    node_t<T> *node = cache_.front();
+
+                    cache_.pop_front();
+                    hashmap_.erase(node->key);
+
+                    delete node;
+                }
+
+                T data = slow_get_page(key);
+                node_t<T> *node = new node_t<T>(data, 1, key);
+
+
+                cache_.push_front(node);
+                hashmap_[key] = cache_.begin();
+                return false;
+            }
+        }
+
         void print_cache() const // only for int
         {
-            for (auto it = cache_.begin(); it != cache_.end(); it++)
+            auto it = cache_.begin();
+
+            for(it; it != cache_.end(); it++)
             {
-                std::cout << (*it).data << " ";
+                std::cout << (*it)->key << " "; 
             }
+
+            std::cout << std::endl;
+
+            it = cache_.begin();
+
+            for(it; it != cache_.end(); it++)
+            {
+                std::cout << (*it)->hit_count << " "; 
+            }
+
             std::cout << std::endl;
         }
     };
