@@ -40,7 +40,7 @@ def main():
     hit = 0
     num = 0
     N = int(input()) #cache_sz
-    M = int(input()) #requests
+    M = int(input()) #recdquests
     max = int(input()) #max
     print(N)
     print(M)
