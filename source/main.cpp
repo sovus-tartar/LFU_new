@@ -23,14 +23,11 @@ int main(int argc, char *argv[])
     {
         int temp;
         std::cin >> temp;
-        //std::cout << "requested: " << temp << std::endl;
         bool succ = C.cache_request(temp, slow_get_page);
         if (succ) {
             hits++;
-            //std::cout << "SUCCESS hit " << temp << std::endl;
         }
 
-        //C.print_cache();
     }
 
     if ((argc > 1) && (!std::strcmp(argv[1], "-t")))

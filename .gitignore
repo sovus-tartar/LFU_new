@@ -1,2 +1,5 @@
-
 CMakeFiles/
+ideal_cache/CMakeFiles
+
+*.out
+*.cmake
