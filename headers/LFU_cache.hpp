@@ -18,7 +18,6 @@ namespace lfu
         T data;
         int hit_count;
         int key;
-
     };
 
     template <typename T>
@@ -42,7 +41,7 @@ namespace lfu
 
         
 
-        void move_node_up(ListIt& node_it)
+        void move_node_up(ListIt&  node_it)
         {   
             node_it->hit_count += 1;
             int hit = node_it->hit_count;
