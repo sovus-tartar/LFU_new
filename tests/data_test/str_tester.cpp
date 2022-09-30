@@ -42,8 +42,6 @@ int cache_test(FILE * in)
             char data[60];
             fscanf(test_file, "%s ", data);
         }
-
-        C.print_cache();
     }
 
     return hits;

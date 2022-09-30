@@ -24,13 +24,23 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(
-  tester
+  str_tester
   ./tests/data_test/str_tester.cpp
 )
 target_link_libraries(
-  tester
+  str_tester
+  GTest::gtest_main
+)
+
+add_executable(
+  unit_tester
+  ./tests/tester.cpp
+)
+target_link_libraries(
+  unit_tester
   GTest::gtest_main
 )
 
 include(GoogleTest)
-gtest_discover_tests(tester)
+gtest_discover_tests(str_tester)
+gtest_discover_tests(unit_tester)
