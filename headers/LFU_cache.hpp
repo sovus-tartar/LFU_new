@@ -116,7 +116,7 @@ namespace lfu
             order_list.push_front(ord);
         };
 
-        bool cache_request(int &key, F &slow_get_page)
+        bool cache_request(int key, F &slow_get_page)
         {
             auto search = hashmap_.find(key);
 
@@ -144,7 +144,7 @@ namespace lfu
             }
         }
 
-        void print_cache() const // only for int
+        void print_cache() const // only for page_t
         {
             auto it = order_list.begin();
 
@@ -157,9 +157,13 @@ namespace lfu
                 std::cout << "Hits " << it->hit << ": ";
 
                 for(it_2; it_2 != it->nodes.end(); ++it_2)
+                {
                     std::cout << it_2->key << " ";
-
+                    
+                }
                 std::cout << std::endl;
+
+
             }
 
             std::cout << std::endl << "End cache dump----------------" << std::endl;
