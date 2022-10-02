@@ -1,9 +1,9 @@
 #include <iostream>
 #include <gtest/gtest.h>
 #include "../../headers/LFU_cache.hpp"
-#include <stdio.h>
+#include <fstream>
 
-FILE * test_file;
+std::ifstream instrm;
 
 
 struct page_t
@@ -16,31 +16,31 @@ page_t slow_get_page(int key)
 {
     page_t temp;
     temp.key = key;
-    fscanf(test_file, "%s\n", temp.data);
+    instrm >> temp.data;
     return temp;
 }
 
-int cache_test(FILE * in)
+int cache_test()
 {
     int N;
-    fscanf(test_file, "%d", &N);
+    instrm >> N;
 
     lfu::cache_t<page_t, int, page_t(int)> C(N);
 
     int attempts;
-    fscanf(test_file, "%d", &attempts);
+    instrm >> attempts;
 
     int hits = 0;
 
     for (int i = 0; i < attempts; i++)
     {
         int temp;
-        fscanf(test_file, "%d", &temp);
+        instrm >> temp;
         bool succ = C.cache_request(temp, slow_get_page);
         if (succ) {
             hits += 1;
             char data[60];
-            fscanf(test_file, "%s ", data);
+            instrm >> data;
         }
     }
 
@@ -49,13 +49,13 @@ int cache_test(FILE * in)
 
 TEST(str_test, test1)
 {
-    test_file = fopen("../tests/data_test/111.in", "r");
+    instrm.open("../tests/data_test/111.in");
 
-    int got_hits = cache_test(test_file);
+    int got_hits = cache_test();
     int exp_hits = -1;
-    fscanf(test_file, "%d", &exp_hits);
+    instrm >> exp_hits;
 
-    fclose(test_file);
+    instrm.close();
 
     EXPECT_EQ(got_hits, exp_hits);
 
