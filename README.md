@@ -6,9 +6,10 @@ The program takes the cache size and the number of requests from stdin and print
 
 ## Tests
 
-Tests are in the tests folder. Use '-t' flag and < to enter them to the program.
+To run tests use ctest
 
-        ./lfu -t < 111.in
+        cd build
+        ctest         
 
 ### Tests format: cache_size attemts_number values... expected_hits
 
@@ -27,13 +28,12 @@ Tests are in the tests folder. Use '-t' flag and < to enter them to the program.
 
 ## Compilation
 
-To compile CMake and g++ are needed. To create makefile run:
+To compile CMake and g++ and Gtest are needed. To create compile run:
 
-                cmake --make
+                cd LFU_new
+                cmake -B ./build
+                cmake --build ./build --config Release --target all 
 
-To make:
-
-                make
 
 
 
