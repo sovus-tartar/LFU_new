@@ -2,7 +2,7 @@
 #include <queue>
 #include <unordered_map>
 #include <vector>
-
+#include <map>
 
 namespace id_cache
 {
@@ -21,30 +21,30 @@ namespace id_cache
         return a.data == b.data;
     }
 
-    template <typename T, typename F> struct cache_t
+    template <typename T, typename F>
+    struct cache_t
     {
-        using ListIt =  typename std::list<node_t<T>>::iterator;
-        using VectIt = typename std::vector<node_t<T>>::iterator;
+        using ListIt = typename std::list<node_t<T>>::iterator;
+        using MapIt = typename std::multimap<int, node_t<T>>::iterator;
 
         size_t sz_;
+
         size_t requests_num;
-        std::list<node_t<T>> cache_;
-        std::unordered_map<int, ListIt> hashmap_cache;
-        ListIt to_remove_node;
+        std::multimap<int, node_t<T>> cache_;
+        std::unordered_map<int, MapIt> hashmap_cache;
 
         std::list<node_t<T>> requests;
-        cache_t(size_t sz, size_t req, F slow_get_page): sz_(sz), requests_num(req)  
+
+        cache_t(size_t sz, size_t req, F slow_get_page) : sz_(sz), requests_num(req)
         {
             read_requests(slow_get_page);
         };
 
-        
-
-        void read_requests(F slow_get_page)    //only for numbers
+        void read_requests(F slow_get_page) // only for numbers
         {
             std::unordered_map<int, ListIt> hashmap_;
 
-            for(int i = 0; i < requests_num; ++i)
+            for (int i = 0; i < requests_num; ++i)
             {
                 int key;
                 node_t<T> node;
@@ -55,7 +55,7 @@ namespace id_cache
                 node.data = slow_get_page(key);
 
                 auto it = hashmap_.find(node.key);
-                
+
                 if (it != hashmap_.end())
                     it->second->next_place = i;
 
@@ -65,24 +65,26 @@ namespace id_cache
                 std::advance(last, -1);
                 hashmap_.insert_or_assign(key, last);
             }
-
         }
 
         void cache_pop_far()
         {
-            hashmap_cache.erase(cache_.front().key);
-            cache_.pop_front();
+            hashmap_cache.erase(cache_.rbegin()->second.key);
+            MapIt temp = cache_.end();
+            std::advance(temp, -1);
+            cache_.erase(temp);
         }
 
         void cache_pop_near()
         {
-            hashmap_cache.erase(cache_.back().key);
-            cache_.pop_back();
+            hashmap_cache.erase(cache_.begin()->second.key);
+            cache_.erase(cache_.begin());
         }
 
         bool if_insert(node_t<T> &node)
         {
-            if (node.next_place > cache_.front().next_place)
+
+            if ((node.next_place) > (std::prev(cache_.end())->second.next_place))
                 return false;
 
             return true;
@@ -90,49 +92,38 @@ namespace id_cache
 
         void cache_insert(node_t<T> &node)
         {
-            auto it = cache_.begin();
-
-
-            for(it; it != cache_.end(); ++it)
-            {
-                if(node.next_place > it->next_place) {
-                    hashmap_cache[node.key] = cache_.insert(it, node);
-                    return;
-                }
-            }
-
-            hashmap_cache[node.key] = cache_.insert(it, node);
-            return;
-
+            MapIt temp = cache_.insert({node.next_place, node});
+            hashmap_cache[node.key] = temp;
         }
 
         int get_hits()
         {
             int hits = 0;
 
-            for(auto it = requests.begin(); it != requests.end(); ++it)
+            for (auto it = requests.begin(); it != requests.end(); ++it)
             {
-                auto found = hashmap_cache.find(it->key);
 
-                if(found != hashmap_cache.end())
+                auto found = hashmap_cache.find(it->key);
+                if (found != hashmap_cache.end())
                 {
                     hits += 1;
                     cache_pop_near();
                     cache_insert(*it);
-                } 
+                }
                 else
                 {
                     if (!is_full())
                     {
                         cache_insert(*it);
-
-                    } else if (if_insert(*it))
+                    }
+                    else if (if_insert(*it))
                     {
                         cache_pop_far();
                         cache_insert(*it);
                     }
-                    
                 }
+
+
             }
 
             return hits;
@@ -145,13 +136,15 @@ namespace id_cache
 
         void print_cache() const // only for int
         {
-            for(auto it = cache_.begin(); it != cache_.end(); ++it)
+            std::cout << "Cache dump started---------------------------" << std::endl;
+            for (auto it = cache_.begin(); it != cache_.end(); ++it)
             {
-                std::cout << "{ " << it->key << ", " << it->next_place << "}" << ", ";
+                std::cout << "{ " << it->second.key << ", " << it->first << "}"
+                          << ", ";
             }
 
-            std::cout << std::endl;
+            std::cout << std::endl
+                      << "Cache dump ended-----------------------------" << std::endl;
         }
-
     };
 }
